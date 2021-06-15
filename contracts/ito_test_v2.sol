@@ -215,12 +215,19 @@ contract HappyTokenPool_V2 is Initializable {
      * based on the pool ratio. After swap successfully, the same account can not swap the same pool again.
     **/
 
-    function swap (bytes32 id,
-                   bytes32 verification,
-                   bytes32 validation,
-                   uint256 exchange_addr_i,
-                   uint128 input_total)
-    public payable returns (uint256 swapped) {
+    function swap (
+        bytes32 id,
+        bytes32 verification,
+        bytes32 validation,
+        uint256 exchange_addr_i,
+        uint128 input_total
+    )
+        public
+        payable
+        returns (
+            uint256 swapped
+        )
+    {
 
         uint128 from_value = input_total/2;
         Pool storage pool = pool_by_id[id];
@@ -234,8 +241,10 @@ contract HappyTokenPool_V2 is Initializable {
         require (packed3.start_time + base_time < block.timestamp, "Not started.");
         require (packed3.end_time + base_time > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
-        require (verification == keccak256(abi.encodePacked(uint256(packed1.password), msg.sender)), 
-                 'Wrong Password');
+        require (
+            verification == keccak256(abi.encodePacked(uint256(packed1.password), msg.sender)),
+            'Wrong Password'
+        );
 
         // revert if the pool is empty
         require (packed2.total_tokens > 0, "Out of Stock");
@@ -254,18 +263,26 @@ contract HappyTokenPool_V2 is Initializable {
         if (swapped_tokens > packed2.limit) {
             // don't be greedy - you can only get at most limit tokens
             swapped_tokens = packed2.limit;
-            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update from_value
+            // Update from_value
+            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));
         } else if (swapped_tokens > packed2.total_tokens ) {
             // if the left tokens are not enough
             swapped_tokens = packed2.total_tokens;
-            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update from_value
+            // Update from_value
+            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));
             // return the eth
             if (exchange_addr == DEFAULT_ADDRESS)
                 payable(msg.sender).transfer(msg.value - from_value);
         }
-        require(swapped_tokens <= packed2.limit);                                                       // make sure again
-        pool.exchanged_tokens[exchange_addr_i] = SafeCast.toUint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], 
-                                                                      from_value));            // update exchanged
+        // make sure again
+        require(swapped_tokens <= packed2.limit);
+        // update exchanged
+        pool.exchanged_tokens[exchange_addr_i] = SafeCast.toUint128(
+            SafeMath.add(
+                pool.exchanged_tokens[exchange_addr_i],
+                from_value
+            )
+        );
 
         // penalize greedy attackers by placing duplication check at the very last
         require (pool.swapped_map[msg.sender] == 0, "Already swapped");
@@ -288,7 +305,16 @@ contract HappyTokenPool_V2 is Initializable {
             uint128 _input_total = input_total;
             uint128 _from_value = from_value;
             uint256 total_tokens = pool.packed2.total_tokens;
-            emit SwapSuccess(_id, msg.sender, exchange_addr, packed3.token_address, _from_value, swapped_tokens, _input_total, total_tokens);
+            emit SwapSuccess(
+                _id,
+                msg.sender,
+                exchange_addr,
+                packed3.token_address,
+                _from_value,
+                swapped_tokens,
+                _input_total,
+                total_tokens
+            );
         }
 
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
@@ -312,10 +338,20 @@ contract HappyTokenPool_V2 is Initializable {
      *                       5. exchanged amount of each token
     **/
 
-    function check_availability (bytes32 id) external view 
-        returns (address[] memory exchange_addrs, uint256 remaining, 
-                 bool started, bool expired, bool unlocked, uint256 unlock_time,
-                 uint256 swapped, uint128[] memory exchanged_tokens) {
+    function check_availability (bytes32 id)
+        external
+        view
+        returns (
+            address[] memory exchange_addrs,
+            uint256 remaining,
+            bool started,
+            bool expired,
+            bool unlocked,
+            uint256 unlock_time,
+            uint256 swapped,
+            uint128[] memory exchanged_tokens
+        )
+    {
         Pool storage pool = pool_by_id[id];
         Packed3 memory packed3 = pool.packed3;
         return (
