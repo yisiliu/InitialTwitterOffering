@@ -13,7 +13,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
 
     await deploy('QLF', {
         from: deployer,
-        args: [0],
+        args: ['QLF', 0],
         log: true,
     });
 };
